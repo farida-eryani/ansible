@@ -1,13 +1,15 @@
-name: Ansible Installation with Python Package Caching
+name: Install Ansible and Generate ID
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  setup:
+  setup-and-id:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Set up Python
@@ -15,25 +17,27 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate installation ID based on relevant files
-        id: gen_id
-        run: echo "INSTALL_ID=$(date +%s)-$(sha256sum **/*.py | sha256sum)" | tee .ansible_cache_id
-
-      - name: Cache Python packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ steps.gen_id.outputs.INSTALL_ID }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
       - name: Install Ansible
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           python -m pip install --upgrade pip
           pip install ansible
 
-      - name: Display the Generated ID
-        run: cat .ansible_cache_id
+      - name: Generate INSTALL_ID based on Ansible installation
+        run: |
+          ANSIBLE_VERSION=$(ansible --version | head -1)
+          DATE=$(date +%s)
+          HASH=$(echo "${DATE}_${ANSIBLE_VERSION}" | sha256sum | awk '{print $1}')
+          echo "INSTALL_ID=${DATE}-${HASH}" > .ansible_cache_id
+          echo "INSTALL_ID=${DATE}-${HASH}"
 
+      - name: Commit INSTALL_ID to repository
+        run: |
+          git config --global user.name "matahariku"
+          git config --global user.email "farida.eryani@gmail.com"
+          git add .ansible_cache_id
+          git commit -m "Update Ansible Cache ID"
+          git push
+
+      - name: Use INSTALL_ID
+        run: cat .ansible_cache_id
 
