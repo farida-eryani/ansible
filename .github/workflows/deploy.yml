@@ -29,6 +29,10 @@ jobs:
           ansible_version=$(ansible --version)
           echo "::set-output name=ansible_version::$ansible_version"
 
+      - name: Show Ansible version
+        run: |
+          echo "${{ steps.install-ansible.outputs.ansible_version }}"
+
       - name: Test ansible
         run: ansible all -i inventory -m ping
 
