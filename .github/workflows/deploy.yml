@@ -38,7 +38,6 @@ jobs:
       - name: Run Ansible Playbook
         if: steps.cache-id.outputs.cache-hit != 'true'
         run: |
-          ansible-playbook -i inventory playbook.yml
           echo "ID=$(date +%s)" > .ansible_cache_id
 
       - name: Update Cache ID
