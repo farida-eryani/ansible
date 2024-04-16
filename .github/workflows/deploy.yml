@@ -26,6 +26,8 @@ jobs:
       - name: Install Ansible
         run: |
           python -m pip install ansible
+          ansible_version=$(ansible --version)
+          echo "::set-output name=ansible_version::$ansible_version"
 
       - name: Test ansible
         run: ansible all -i inventory -m ping
