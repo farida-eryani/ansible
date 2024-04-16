@@ -1,44 +1,39 @@
-name: Setup and Install Dependencies
+name: Ansible Conditional Execution
 
-on: [push, pull_request, workflow_dispatch]
+on: [push, workflow_dispatch]
 
 jobs:
-  setup-and-install:
+  ansible-deployment:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Check for Cached ID
+        id: cache-id
+        uses: actions/cache@v2
         with:
-          python-version: '3.x'
+          path: '.ansible_cache_id'
+          key: ${{ runner.os }}-ansible-id
 
-      - name: Check Initialization State
-        id: check_state
+      - name: Run Ansible if ID is not cached
+        if: steps.cache-id.outputs.cache-hit != 'true'
         run: |
-          if [ -f '.ansible_initialized' ]; then
-            echo "INITIALIZED=true" >> $GITHUB_ENV
-          else
-            echo "INITIALIZED=false" >> $GITHUB_ENV
-          fi
-          echo "ANSIBLE_ID=${{ github.event.inputs.ansible_id }}" >> $GITHUB_ENV
-
-      - name: Install Ansible and other requirements conditionally
-        if: env.INITIALIZED == 'false' || env.PREV_ID != env.ANSIBLE_ID
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible
-          echo "${{ github.event.inputs.ansible_id }}" > .ansible_executed_id
-          touch .ansible_initialized
-          git add .ansible_executed_id .ansible_initialized
-          git commit -m "Initial setup completed and Ansible execution ID updated"
+          # Run your Ansible playbook here
+          ansible-playbook -i inventory playbook.yml
+          # Assuming the playbook execution is successful, update the cache ID
+          echo "ID=$(date +%s)" > .ansible_cache_id
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .ansible_cache_id
+          git commit -m "Update Ansible Cache ID"
           git push
 
-      - name: Cache Python packages
-        uses: actions/cache@v3
+      - name: Setup caching for future runs
+        uses: actions/cache@v2
         with:
-          path: |
-            ~/.cache/pip
-
+          path: '.ansible_cache_id'
+          key: ${{ runner.os }}-ansible-id-new
+          restore-keys: |
+            ${{ runner.os }}-ansible-id
