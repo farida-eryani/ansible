@@ -26,5 +26,5 @@ jobs:
           pip install ansible
 
       - name: Run test
-        run: pip test
+        run: pytest
 
