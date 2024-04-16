@@ -1,4 +1,4 @@
-name: Caching with npm
+name: Caching with pip
 on: push
 jobs:
   build:
@@ -6,22 +6,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache node modules
-        id: cache-npm
+      - name: Cache pip packages
+        id: cache-pip
         uses: actions/cache@v3
-        env:
-          cache-name: cache-node-modules
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-pip-${{ env.cache-name }}-
+            ${{ runner.os }}-pip-
 
-      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-        name: List the state of node modules
-        continue-on-error: true
+      - if: ${{ steps.cache-pip.outputs.cache-hit != 'true' }}
+        name: List installed packages
         run: pip list
 
       - name: Build
