@@ -21,7 +21,7 @@ jobs:
         run: pip list
 
       - name: Build
-        run: pip build
+        run: pip install .
 
       - name: Test
         run: pip test
