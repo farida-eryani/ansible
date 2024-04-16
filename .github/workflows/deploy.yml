@@ -1,0 +1,22 @@
+name: Setup and Install Dependencies
+
+on: [push, pull_request]  # Trigger the workflow on push and pull request events
+
+jobs:
+  setup-and-install:
+    runs-on: ubuntu-latest  # Specify the runner environment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Checks out my repository under $GITHUB_WORKSPACE
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'  # Setup Python version 3.x
+
+      - name: Install Ansible and other requirements
+        run: |
+          python -m pip install --upgrade pip >/dev/null 2>&1
+          python -m pip install -r requirements.txt >/dev/null 2>&1
+
