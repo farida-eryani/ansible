@@ -1,4 +1,4 @@
-name: Install Ansible and Generate ID
+name: Ansible Setup with Token Authentication
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  setup-and-id:
+  setup-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,20 +22,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible
 
-      - name: Generate INSTALL_ID based on Ansible installation
-        run: |
-          ANSIBLE_VERSION=$(ansible --version | head -1)
-          DATE=$(date +%s)
-          HASH=$(echo "${DATE}_${ANSIBLE_VERSION}" | sha256sum | awk '{print $1}')
-          echo "INSTALL_ID=${DATE}-${HASH}" > .ansible_cache_id
-          echo "INSTALL_ID=${DATE}-${HASH}"
+      - name: Generate INSTALL_ID
+        run: echo "INSTALL_ID=$(date +%s)-$(ansible --version | sha256sum | head -c 64)" > .ansible_cache_id
 
-      - name: Push changes
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.TOKEN }}@github.com/farida-eryani/ansible.git
-          git push
-
-
-      - name: Use INSTALL_ID
+      - name: Display INSTALL_ID
         run: cat .ansible_cache_id
+
+      - name: Configure Git
+        run: |
+          git config user.name "farida-eryani"
+          git config user.email "farida.eryani@esante-bretagne.fr"
+
+      - name: Commit and Push INSTALL_ID
+        run: |
+          git add .ansible_cache_id
+          git commit -m "Update Ansible Cache ID"
+          git push https://${{ secrets.TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+
 
