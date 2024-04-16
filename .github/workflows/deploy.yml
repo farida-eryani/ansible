@@ -24,14 +24,16 @@ jobs:
         run: pip list
 
       - name: Install Ansible
+        id: install-ansible
         run: |
           python -m pip install ansible
-          ansible_version=$(ansible --version)
-          echo "::set-output name=ansible_version::$ansible_version"
+          ansible --version > ansible_version.txt
 
-      - name: Show Ansible version
-        run: |
-          echo "${{ steps.install-ansible.outputs.ansible_version }}"
+      - name: Cache Ansible binaries
+        uses: actions/cache@v3
+        with:
+          path: ~/.ansible
+          key: ${{ runner.os }}-ansible-${{ hashFiles('ansible_version.txt') }}
 
       - name: Test ansible
         run: ansible all -i inventory -m ping
