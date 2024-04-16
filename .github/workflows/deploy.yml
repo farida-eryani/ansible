@@ -1,18 +1,16 @@
-name: Ansible Setup with Token Authentication
+name: Python Workflow
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
-  setup-and-deploy:
+  setup-and-install:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Python
@@ -25,7 +23,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible
 
-      - name: Generate INSTALL_ID
+      - name: Cache Python packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+
+      - name: Check for existing INSTALL_ID
+        id: check_id
+        run: |
+          if [ -f .ansible_cache_id ]; then
+            echo "::set-output name=install_id::$(cat .ansible_cache_id)"
+          else
+            echo "::set-output name=install_id::"
+          fi
+
+      - name: Generate INSTALL_ID if not exists
+        if: steps.check_id.outputs.install_id == ''
         run: echo "INSTALL_ID=$(date +%s)-$(ansible --version | sha256sum | head -c 64)" > .ansible_cache_id
 
       - name: Display INSTALL_ID
@@ -33,13 +47,13 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "farida-eryani"
-          git config user.email "farida.eryani@esante-bretagne.fr"
+          git config user.name "Your Name"
+          git config user.email "youremail@example.com"
 
       - name: Commit and Push INSTALL_ID
         run: |
           git add .ansible_cache_id
           git commit -m "Update Ansible Cache ID"
-          git push https://${{ secrets.TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git push
 
 
