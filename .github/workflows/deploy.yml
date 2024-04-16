@@ -24,9 +24,6 @@ jobs:
         continue-on-error: true
         run: pip list
 
-      - name: Install dependencies
-        run: pip install
-
       - name: Build
         run: pip run build
 
