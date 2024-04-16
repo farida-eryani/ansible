@@ -1,28 +1,39 @@
-name: Update Cache ID and Push Changes
+name: Ansible Installation with Python Package Caching
 
-on:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: write
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  update-cache-id:
+  setup:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
-      - name: Configure Git
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Generate installation ID based on relevant files
+        id: gen_id
+        run: echo "INSTALL_ID=$(date +%s)-$(sha256sum **/*.py | sha256sum)" | tee .ansible_cache_id
+
+      - name: Cache Python packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ steps.gen_id.outputs.INSTALL_ID }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install Ansible
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          git config user.name "matahariku"
-          git config user.email "action@github.com"
-      - name: Update Cache ID
-        run: |
-          echo "ID=$(date +%s)" > .ansible_cache_id
-          git add .ansible_cache_id
-          git commit -m "Update Ansible Cache ID"
-          git push
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Display the Generated ID
+        run: cat .ansible_cache_id
 
 
