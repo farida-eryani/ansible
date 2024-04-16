@@ -21,9 +21,10 @@ jobs:
         name: List installed packages
         run: pip list
 
-      - name: Build
-        run: pip build
+      - name: Install dependencies
+        run: |
+          pip install ansible
 
-      - name: Test
+      - name: Run test
         run: pip test
 
