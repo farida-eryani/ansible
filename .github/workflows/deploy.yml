@@ -30,13 +30,11 @@ jobs:
           echo "INSTALL_ID=${DATE}-${HASH}" > .ansible_cache_id
           echo "INSTALL_ID=${DATE}-${HASH}"
 
-      - name: Commit INSTALL_ID to repository
+      - name: Push changes
         run: |
-          git config --global user.name "farida-eryani"
-          git config --global user.email "farida.eryani@esante-bretagne.fr"
-          git add .ansible_cache_id
-          git commit -m "Update Ansible Cache ID"
+          git remote set-url origin https://x-access-token:${{ secrets.TOKEN }}@github.com/farida-eryani/ansible.git
           git push
+
 
       - name: Use INSTALL_ID
         run: cat .ansible_cache_id
