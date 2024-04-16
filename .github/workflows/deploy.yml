@@ -1,6 +1,6 @@
 name: Ansible Conditional Execution
 
-on: [push, workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   ansible-deployment:
@@ -17,23 +17,37 @@ jobs:
           path: '.ansible_cache_id'
           key: ${{ runner.os }}-ansible-id
 
-      - name: Run Ansible if ID is not cached
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'  # Define the Python version.
+
+      - name: Install Ansible
         if: steps.cache-id.outputs.cache-hit != 'true'
         run: |
-          # Run your Ansible playbook here
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Cache Python packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+          key: ${{ runner.os }}-python-ansible-${{ hashFiles('**/*.yml') }}
+
+      - name: Run Ansible Playbook
+        if: steps.cache-id.outputs.cache-hit != 'true'
+        run: |
           ansible-playbook -i inventory playbook.yml
-          # Assuming the playbook execution is successful, update the cache ID
           echo "ID=$(date +%s)" > .ansible_cache_id
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+
+      - name: Update Cache ID
+        if: steps.cache-id.outputs.cache-hit != 'true'
+        run: |
+          git config --global user.name "matahariku"
+          git config --global user.email "farida.eryani@gmail.com"
           git add .ansible_cache_id
           git commit -m "Update Ansible Cache ID"
           git push
 
-      - name: Setup caching for future runs
-        uses: actions/cache@v2
-        with:
-          path: '.ansible_cache_id'
-          key: ${{ runner.os }}-ansible-id-new
-          restore-keys: |
-            ${{ runner.os }}-ansible-id
+
