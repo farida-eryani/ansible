@@ -1,6 +1,6 @@
 name: Setup and Install Dependencies
 
-on: [push, pull_request]  # Trigger the workflow on push and pull request events
+on: [push, pull_request, workflow_dispatch]  # Trigger the workflow on push and pull request events
 
 jobs:
   setup-and-install:
