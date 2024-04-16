@@ -32,8 +32,8 @@ jobs:
 
       - name: Commit INSTALL_ID to repository
         run: |
-          git config --global user.name "matahariku"
-          git config --global user.email "farida.eryani@gmail.com"
+          git config --global user.name "farida-eryani"
+          git config --global user.email "farida.eryani@esante-bretagne.fr"
           git add .ansible_cache_id
           git commit -m "Update Ansible Cache ID"
           git push
