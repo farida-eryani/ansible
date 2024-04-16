@@ -1,59 +1,35 @@
-name: Python Workflow
-
-on:
-  push:
-    branches:
-      - main
-
+name: Caching with npm
+on: push
 jobs:
-  setup-and-install:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Install Ansible
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible
-
-      - name: Cache Python packages
-        uses: actions/cache@v2
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
-      - name: Check for existing INSTALL_ID
-        id: check_id
-        run: |
-          if [ -f .ansible_cache_id ]; then
-            echo "::set-output name=install_id::$(cat .ansible_cache_id)"
-          else
-            echo "::set-output name=install_id::"
-          fi
+      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: pip list
 
-      - name: Generate INSTALL_ID if not exists
-        if: steps.check_id.outputs.install_id == ''
-        run: echo "INSTALL_ID=$(date +%s)-$(ansible --version | sha256sum | head -c 64)" > .ansible_cache_id
+      - name: Install dependencies
+        run: pip install
 
-      - name: Display INSTALL_ID
-        run: cat .ansible_cache_id
+      - name: Build
+        run: pip run build
 
-      - name: Configure Git
-        run: |
-          git config user.name "farida-eryani"
-          git config user.email "farida.eryani@esante-bretagne.com"
-
-      - name: Commit and Push INSTALL_ID
-        run: |
-          git add .ansible_cache_id
-          git commit -m "Update Ansible Cache ID"
-          git push
-
+      - name: Test
+        run: pip test
 
